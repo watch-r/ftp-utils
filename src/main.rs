@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+mod paths;
 
 #[derive(Parser)]
 #[command(name = "mntisp")]

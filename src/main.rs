@@ -18,6 +18,10 @@ enum Commands {
     Start,
     /// Unmounts the ISP Media share
     Stop,
+    /// Checks if the directory is currently mounted
+    Status,
+    /// Shows the last 15 lines of activity logs
+    Log,
 }
 
 fn main() {
@@ -32,6 +36,16 @@ fn main() {
         Commands::Stop => {
             if let Err(e) = mount::stop() {
                 eprintln!("Error during stop: {}", e);
+            }
+        }
+        Commands::Status => {
+            if let Err(e) = mount::status() {
+                eprintln!("Error checking status: {}", e);
+            }
+        }
+        Commands::Log => {
+            if let Err(e) = logging::show_log() {
+                eprintln!("Error showing log: {}", e);
             }
         }
     }

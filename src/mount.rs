@@ -102,10 +102,37 @@ pub fn stop() -> Result<(), String> {
     if status.success() {
         let _ = log_activity("SUCCESS", "Unmounted successfully");
         println!("[SUCCESS] Unmounted successfully.");
+        return Ok(());
+    }
+
+    // First attempt was likely blocked by an open file handle — retry lazily.
+    println!("[WARN] Normal unmount busy, retrying with lazy unmount...");
+    let lazy_status = Command::new("fusermount3")
+        .args(["-uz", target_str])
+        .status()
+        .map_err(|e| format!("Failed to run fusermount3 (lazy): {}", e))?;
+
+    if lazy_status.success() {
+        let _ = log_activity("SUCCESS", "Unmounted (lazy)");
+        println!("[SUCCESS] Unmounted (lazily) — will finish detaching once files close.");
         Ok(())
     } else {
-        let err_msg = "fusermount3 exited with an error (device might be busy)".to_string();
+        let err_msg = "fusermount3 failed even with lazy unmount".to_string();
         let _ = log_activity("STOP_FAILED", &err_msg);
         Err(err_msg)
     }
+}
+
+pub fn status() -> Result<(), String> {
+    let target = mount_path()?;
+    println!("--- ISP Media Mount Status ---");
+    if is_mounted() {
+        println!("Status: MOUNTED");
+        println!("Location: {:?}", target);
+        println!("Disk Usage:");
+        let _ = Command::new("df").arg("-h").arg(&target).status();
+    } else {
+        println!("Status: NOT MOUNTED");
+    }
+    Ok(())
 }
